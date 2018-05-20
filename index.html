@@ -1,0 +1,134 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="content-type" content="text/html;charset=utf-8">
+    <link rel="stylesheet" href="src/css/layui.css">
+    <!--<div id='wx_pic' style='margin:0 auto;display:none;'>-->
+        <!--<img src='photo.jpg'/>-->
+    <!--</div>-->
+    <title>消消看，挑战1000分</title>
+    <link rel="stylesheet" href="css/style1.css">
+</head>
+<body>
+<script type="text/javascript" src=" js/play68_sdk.js"></script>
+<script language="javascript" type="text/javascript" src="js/play68.js"></script>
+<script type="text/javascript">        (function () {
+    updateShare(0);
+})();    </script>
+<div class="page">
+    <div class="header">
+        <div class="title"><span></span></div>
+        <div class="text">
+            <div id="targetScore"></div>
+            <div id="score"></div>
+        </div>
+    </div>
+    <div class="GameStage" id="GameStage"></div>
+    <div class="btns"><a href="javascript:void(0)" class="btn_01" id="reset"><span>重新开始</span></a></div>
+    <div class="memo">技巧提示 ^_^</div>
+    <div class="memo">一次消除的砖块越多，得分越高；</div>
+    <div class="memo">尽量把同颜色的砖块积累到一起消除；</div>
+</div>
+<!-- <div id="shareLayer"><div class="zan"></div><div id="tit" class="gameText"></div><a href="javascript:void(0)" class="btn_01" id="shareBtn"><span>分享给朋友</span></a><a href="javascript:void(0)" class="btn_01" id="reset_1"><span>重新开始</span></a></div> -->
+
+<div id="shareLayer" style="text-align: center">
+    <div id="guanjun" style="font-size:1em; color:#fff; line-height:1em;"></div>
+    <!--<div class="shareArr"></div>-->
+    <!--<div class="shareText">现在可以点击这里<br>分享给朋友了</div>-->
+    <!--<div class="zan"></div>-->
+    <div id="tit" class="gameText"></div>
+    <a href="javascript:void(0)" class="btn_02" id="reset_1"><span>重新开始</span></a>
+    <a href="javascript:void(0)" class="btn_03" id="submit"><span>提交分数</span></a>
+</div>
+<script src="src/layui.js"></script>
+<script type="text/javascript" src="js/wx.js?24"></script>
+<script src="nebulas.js"></script>
+<script src="nebPay.js"></script>
+<script src="jquery.min.js"></script>
+<script>
+    var toAddr = 'n1wmCjUoAN1tEsym72YaDLWPh4YQCXhxEnd'
+    var nebulas = require("nebulas"),
+        Account = nebulas.Account,
+        neb = new nebulas.Neb();
+    neb.setRequest(new nebulas.HttpRequest("https://mainnet.nebulas.io"));
+    var localAccount;
+    var localName;
+    var from;
+    window.postMessage({
+        "target": "contentscript",
+        "data": {},
+        "method": "getAccount",
+    }, "*");
+
+    window.addEventListener('message', function (e) {
+        if (e.data && e.data.data) {
+            if (e.data.data.account) {//这就是当前钱包中的地址
+                localAccount = e.data.data.account;
+                from = localAccount;
+            }else{
+                from =Account.NewAccount().getAddressString();
+            }
+            getData();
+        }
+    });
+
+    function getData() {
+        var value = "0";
+        var nonce = "0"
+        var gas_price = "1000000"
+        var gas_limit = "2000000"
+        var callFunction = "get";
+        var callArgs = ""
+        var contract = {
+            "function": callFunction,
+            "args": callArgs
+        }
+        neb.api.call(from,toAddr,value,nonce,gas_price,gas_limit,contract).then(function (resp) {
+            onresult(resp)
+        }).catch(function (err) {
+            //(err)
+            console.log("error:" + err.message)
+        })
+    }
+
+    var dataList;
+    var paiming =-1;
+    function onresult(resp) {
+        dataList = JSON.parse(resp.result);
+        if (dataList) {
+            //解析第一名
+            //查看当前帐号
+            dataList.sort(compare('score'))
+            if(dataList[0].score>300){
+                dataList.splice(0,1);
+            }
+            // $('#guanjun').html("冠军选手:&nbsp;&nbsp;"+dataList[0].name+"&nbsp; 得分:&nbsp;"+dataList[0].score);
+            // document.querySelector("#shareLayer .gameText").innerHTML = "全球只有0.1%的人能过1500分！<br>您取得了" + this.score + "分<br>超越了" + a + "%的星云链友";
+
+            paiming =-1;
+            if(localAccount){
+                for(var i = 0;i<dataList.length;i++){//看看自己的排名
+                    if(dataList[i].uid == localAccount){
+                        paiming =i+1;
+                        localName = dataList[i].name;
+                        break;
+                    }
+                }
+                if(paiming!=-1) {//有排名
+                    $('#paimingme').html("我的排名:&nbsp;&nbsp;"+paiming)
+                }else{
+                    $('#paimingme').html("我的排名:&nbsp;&nbsp;未上传")
+                }
+            }else{
+                //不显示
+            }
+        }else{
+            $('#guanjun').html("冠军选手:无");
+        }
+    }
+
+
+</script>
+</body>
+</html>
